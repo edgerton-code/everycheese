@@ -1,5 +1,5 @@
 import pytest
-from .factories import UserFactory
+from .factories import UserFactory, CheeseFactory, cheese
 from pytest_django.asserts import assertContains
 
 from django.urls import reverse
@@ -41,9 +41,7 @@ def test_good_cheese_list_view_expanded(rf):
     assertContains(response, 'Cheese List')
 
 
-def test_good_cheese_detail_view(rf):
-    # Order some cheese from the CheeseFactory 
-    cheese = CheeseFactory()
+def test_good_cheese_detail_view(rf, cheese):
     # Make a request for our new cheese 
     url = reverse("cheeses:detail",
         kwargs={'slug': cheese.slug})
