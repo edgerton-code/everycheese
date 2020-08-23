@@ -1,5 +1,5 @@
 import pytest
-import .factories import UserFactory
+from .factories import UserFactory
 from pytest_django.asserts import assertContains
 
 from django.urls import reverse
@@ -54,7 +54,8 @@ def test_good_cheese_detail_view(rf):
     response = callable_obj(request, slug=cheese.slug) 
     # Test that the response is valid 
     assertContains(response, cheese.name)
- 
+
+
 def test_good_cheese_create_view(client, user):
      # Make the client authenticate 
      client.force_login(user) 
@@ -64,3 +65,51 @@ def test_good_cheese_create_view(client, user):
      response = client.get(url) 
      # Test that the response is valid 
      assert response.status_code == 200
+
+def test_cheese_list_contains_2_cheeses(rf):
+    # Let's create a couple cheeses
+    cheese1 = CheeseFactory()
+    cheese2 = CheeseFactory()
+    # Create a request and then a response
+    # for a list of cheeses
+    request = rf.get(reverse('cheeses:list'))
+    response = CheeseListView.as_view()(request)
+    # Assert that the response contains both cheese names
+    # in the template.
+    assertContains(response, cheese1.name)
+    assertContains(response, cheese2.name)
+
+def test_detail_contains_cheese_data(rf): 
+    cheese = CheeseFactory() 
+    # Make a request for our new cheese
+    url = reverse("cheeses:detail",
+        kwargs={'slug': cheese.slug})
+    request = rf.get(url)
+    # Use the request to get the response 
+    callable_obj = CheeseDetailView.as_view() 
+    response = callable_obj(request, slug=cheese.slug) 
+    # Let's test our Cheesy details! 
+    assertContains(response, cheese.name) 
+    assertContains(response, cheese.get_firmness_display()) 
+    assertContains(response, cheese.country_of_origin.name)
+
+
+def test_cheese_create_form_valid(client, user):
+    # Authenticate the user 
+    client.force_login(user) 
+    # Submit the cheese add form 
+    form_data = {
+        "name": "Paski Sir",
+        "description": "A salty hard cheese",
+        "firmness": Cheese.Firmness.HARD,
+    }
+    url = reverse("cheeses:add") 
+    response = client.post(url, form_data)
+
+    # Get the cheese based on the name 
+    cheese = Cheese.objects.get(name="Paski Sir")
+
+    # Test that the cheese matches our form 
+    assert cheese.description == "A salty hard cheese" 
+    assert cheese.firmness == Cheese.Firmness.HARD 
+    assert cheese.creator == user
